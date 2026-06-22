@@ -9,6 +9,7 @@ const resetButton = document.getElementById("resetButton") as HTMLButtonElement;
 const consoleStartButton = document.getElementById("consoleStartButton") as HTMLButtonElement;
 const consoleStopButton = document.getElementById("consoleStopButton") as HTMLButtonElement;
 const exportConsoleButton = document.getElementById("exportConsoleButton") as HTMLButtonElement;
+const clearConsoleButton = document.getElementById("clearConsoleButton") as HTMLButtonElement;
 const eraseButton = document.getElementById("eraseButton") as HTMLButtonElement;
 const addFileButton = document.getElementById("addFile") as HTMLButtonElement;
 const programButton = document.getElementById("programButton") as HTMLButtonElement;
@@ -65,6 +66,7 @@ hide(eraseButton);
 hide(consoleStopButton);
 hide(resetButton);
 hide(exportConsoleButton);
+hide(clearConsoleButton);
 hide(filesDiv);
 hide(flashMode);
 hide(flashFreq);
@@ -372,6 +374,7 @@ consoleStartButton.onclick = async () => {
   show(consoleStopButton);
   show(resetButton);
   show(exportConsoleButton);
+  show(clearConsoleButton);
   hide(programDiv);
 
   consoleLogBuffer = "";
@@ -432,6 +435,11 @@ async function startConsoleReading() {
     term.writeln("\n[CONSOLE] Connection lost, waiting for reconnection...");
   }
 }
+
+clearConsoleButton.onclick = () => {
+  term.clear();
+  consoleLogBuffer = "";
+};
 
 exportConsoleButton.onclick = () => {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
