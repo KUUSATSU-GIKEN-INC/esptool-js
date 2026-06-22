@@ -1,129 +1,152 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>ESP Tool</title>
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@4.19.0/css/xterm.css">
-        <link
-            href="https://fonts.googleapis.com/css?family=Orbitron"
-            rel="stylesheet"
-        />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@4.19.0/css/xterm.css" />
+        <link rel="stylesheet" href="style.css" />
         <link rel="icon" href="../assets/favicon.ico" />
-         <script src="https://cdn.jsdelivr.net/npm/xterm@4.19.0/lib/xterm.min.js"></script>
-         <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.js"></script>
-         <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/xterm@4.19.0/lib/xterm.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.js"></script>
     </head>
     <body>
-        <h1 align="center"><p><img src="../assets/esp-logo.png" width="42" height="42" style="vertical-align:middle" crossorigin></img> ESP Tool</p></h1>
-        <h4 align="center">A Serial Flasher utility for Espressif chips</h4>
-        <div id="safariErr" style="display:none"><p align="center" style="color:red">This tool is not supported on Safari browser!</p>
+        <header class="app-header">
+            <h1><img src="../assets/esp-logo.png" alt="ESP Logo" crossorigin />ESP Tool</h1>
+            <p>A Serial Flasher utility for Espressif chips</p>
+        </header>
+
+        <div id="safariErr" class="safari-error hidden">
+            This tool is not supported on Safari browser!
         </div>
-        <div align="center">
-            <a class="btn btn-info" href="./docs/index.html">View the API Documentation</a>
 
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" id="debugLogging" value="">
-                <label class="form-check-label" for="debugLogging">Show Debug log</label>
+        <main class="container" id="main">
+            <div class="toolbar">
+                <a class="link-btn" href="./docs/index.html">API Documentation</a>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="debugLogging" />
+                    Show Debug log
+                </label>
             </div>
-          </div>
-        <div class="container" id="main">
-            <hr/>
-            <div id="program">
-                <h3> Program </h3>
-                <label for="baudrates" id="lblBaudrate">Baudrate:</label>
-                <label style="display:none" id="lblConnTo">Connected to device: </label>
-                <select name="baudrates" id="baudrates">
-                    <option value="921600">921600</option>
-                    <option value="460800">460800</option>
-                    <option value="230400">230400</option>
-                    <option value="115200">115200</option>
-                </select>
 
-                <br><br>
+            <section id="program" class="card">
+                <h2 class="card-title">Program</h2>
 
-                <input class="btn btn-info btn-sm" type="button" id="connectButton" value="Connect" />
-                <input class="btn btn-info btn-sm" type="button" id="copyTraceButton" value="Copy Trace" />
-                <input class="btn btn-warning btn-sm" type="button" id="disconnectButton" value="Disconnect" />
-                <input class="btn btn-danger btn-sm" type="button" id="eraseButton" value="Erase Flash" />
-                <br>
-
-                <div class="alert alert-danger alert-dismissible" id="alertDiv" style="display:none; margin-top:10px">
-                    <a href="#" class="close" aria-label="close" onclick="$('.alert').hide()">&times;</a>
-                    <span id="alertmsg"></span>
+                <div id="connectControls" class="form-row">
+                    <div class="form-group">
+                        <label for="baudrates" id="lblBaudrate">Baudrate</label>
+                        <select id="baudrates">
+                            <option value="921600">921600</option>
+                            <option value="460800">460800</option>
+                            <option value="230400">230400</option>
+                            <option value="115200">115200</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div id="files">
-                    <table class="table table-striped" id="fileTable">
-                        <thead class="thead-light">
+                <div id="lblConnTo" class="connection-status hidden">
+                    <span class="dot"></span>
+                    <span id="connDeviceText">Connected to device</span>
+                </div>
+
+                <div class="btn-group" id="programActions">
+                    <button class="btn btn-primary" id="connectButton">Connect</button>
+                    <button class="btn btn-outline" id="copyTraceButton">Copy Trace</button>
+                    <button class="btn btn-warning" id="disconnectButton">Disconnect</button>
+                    <button class="btn btn-danger" id="eraseButton">Erase Flash</button>
+                </div>
+
+                <div id="alertDiv" class="alert alert-error hidden" role="alert">
+                    <span id="alertmsg"></span>
+                    <button class="alert-close" aria-label="Close">×</button>
+                </div>
+
+                <div id="files" class="hidden">
+                    <table class="file-table" id="fileTable">
+                        <thead>
                             <tr>
                                 <th>Flash Address</th>
                                 <th>File</th>
+                                <th>Progress</th>
                                 <th></th>
                             </tr>
                         </thead>
-                        <tbody id="tableBody">
-                        </tbody>
+                        <tbody id="tableBody"></tbody>
                     </table>
-                    <input class="btn btn-info btn-sm" type="button" id="addFile" value="Add File" />
-                    <br><br>
-                    <label for="flashMode" id="lblFlashMode">Flash Mode:</label>
-                    <select name="flashMode" id="flashMode">
-                        <option value="keep" selected>keep</option>
-                        <option value="dio">dio</option>
-                        <option value="qio">qio</option>
-                        <option value="dout">dout</option>
-                        <option value="qout">qout</option>
-                    </select>
-                    <br><br>
-                    <label for="flashFreq" id="lblFlashFreq">Flash Frequency:</label>
-                    <select name="flashFreq" id="flashFreq">
-                        <option value="keep">keep</option>
-                    </select>
-                    <br><br>
-                    <label for="flashSize" id="lblFlashSize">Flash Size:</label>
-                    <select name="flashSize" id="flashSize">
-                        <option value="detect">detect</option>
-                        <option value="keep">keep</option>
-                    </select>
-                    <br><br>
-                    <input class="btn btn-info btn-sm" type="button" id="programButton" value="Program" />
+                    <button class="btn btn-outline" id="addFile">Add File</button>
+
+                    <div class="form-row" style="margin-top: 1rem;">
+                        <div class="form-group">
+                            <label for="flashMode" id="lblFlashMode">Flash Mode</label>
+                            <select id="flashMode">
+                                <option value="keep" selected>keep</option>
+                                <option value="dio">dio</option>
+                                <option value="qio">qio</option>
+                                <option value="dout">dout</option>
+                                <option value="qout">qout</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="flashFreq" id="lblFlashFreq">Flash Frequency</label>
+                            <select id="flashFreq">
+                                <option value="keep">keep</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="flashSize" id="lblFlashSize">Flash Size</label>
+                            <select id="flashSize">
+                                <option value="detect">detect</option>
+                                <option value="keep">keep</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" id="programButton">Program</button>
                 </div>
-                <output id="list"></output>
-                <hr/>
-            </div>
-            <div id="console">
-                <h3>Console </h3>
-                <label style="display:none" id="lblConsoleFor">Connected to device: </label>
-                <label for="consoleBaudrates" id="lblConsoleBaudrate">Baudrate:</label>
-                <select name="consoleBaudrates" id="consoleBaudrates">
-                    <option value="115200">115200</option>
-                    <option value="74880">74880</option>
-                </select>
-                <label for="reconnectDelay" id="lblReconnectDelay">Reconnect Delay (ms):</label>
-                <input type="number" id="reconnectDelay" name="reconnectDelay" value="1000" min="100" max="10000" step="100">
-                <label for="maxRetries" id="lblMaxRetries">Max Retries:</label>
-                <input type="number" id="maxRetries" name="maxRetries" value="5" min="1" max="20" step="1">
+            </section>
 
-                <br><br>
+            <section id="console" class="card">
+                <h2 class="card-title">Console</h2>
 
-                <input class="btn btn-info" type="button" id="consoleStartButton" value="Start" />
-                <input class="btn btn-info" type="button" id="consoleStopButton" value="Stop" />
-                <input class="btn btn-info" type="button" id="resetButton" value="Reset" />
-                <hr/>
-            </div>
-            <div id="terminal"></div>
-        </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="consoleBaudrates" id="lblConsoleBaudrate">Baudrate</label>
+                        <select id="consoleBaudrates">
+                            <option value="115200">115200</option>
+                            <option value="74880">74880</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="reconnectDelay" id="lblReconnectDelay">Reconnect Delay (ms)</label>
+                        <input type="number" id="reconnectDelay" value="1000" min="100" max="10000" step="100" />
+                    </div>
+                    <div class="form-group">
+                        <label for="maxRetries" id="lblMaxRetries">Max Retries</label>
+                        <input type="number" id="maxRetries" value="5" min="1" max="20" step="1" />
+                    </div>
+                </div>
+
+                <div id="lblConsoleFor" class="connection-status hidden">
+                    <span class="dot"></span>
+                    <span>Console connected</span>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="consoleStartButton">Start</button>
+                    <button class="btn btn-warning" id="consoleStopButton">Stop</button>
+                    <button class="btn btn-outline" id="resetButton">Reset</button>
+                </div>
+            </section>
+
+            <div id="terminal" class="terminal-container"></div>
+        </main>
+
         <script src="index.ts" type="module"></script>
         <script>
-            // Safari 3.0+ "[object HTMLElementConstructor]"
             var isSafari = /constructor/i.test(window.HTMLElement) || (function (p) { return p.toString() === "[object SafariRemoteNotification]"; })(!window['safari'] || (typeof safari !== 'undefined' && window['safari'].pushNotification));
-
-            if(isSafari)
-            {
-               document.getElementById("safariErr").style.display = "inline";
-               document.getElementById("main").style.display = "none";
+            if (isSafari) {
+                document.getElementById("safariErr").classList.remove("hidden");
+                document.getElementById("main").classList.add("hidden");
             }
         </script>
     </body>

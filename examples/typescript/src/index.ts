@@ -10,7 +10,7 @@ const consoleStartButton = document.getElementById("consoleStartButton") as HTML
 const consoleStopButton = document.getElementById("consoleStopButton") as HTMLButtonElement;
 const eraseButton = document.getElementById("eraseButton") as HTMLButtonElement;
 const addFileButton = document.getElementById("addFile") as HTMLButtonElement;
-const programButton = document.getElementById("programButton");
+const programButton = document.getElementById("programButton") as HTMLButtonElement;
 const filesDiv = document.getElementById("files");
 const terminal = document.getElementById("terminal");
 const programDiv = document.getElementById("program");
@@ -19,6 +19,7 @@ const lblBaudrate = document.getElementById("lblBaudrate");
 const lblConsoleBaudrate = document.getElementById("lblConsoleBaudrate");
 const lblConsoleFor = document.getElementById("lblConsoleFor");
 const lblConnTo = document.getElementById("lblConnTo");
+const connDeviceText = document.getElementById("connDeviceText");
 const table = document.getElementById("fileTable") as HTMLTableElement;
 const alertDiv = document.getElementById("alertDiv");
 const flashMode = document.getElementById("flashMode") as HTMLSelectElement;
@@ -30,9 +31,6 @@ const lblFlashSize = document.getElementById("lblFlashSize");
 
 const debugLogging = document.getElementById("debugLogging") as HTMLInputElement;
 
-// This is a frontend example of Esptool-JS using local bundle file
-// To optimize use a CDN hosted version like
-// https://unpkg.com/esptool-js@0.5.0/bundle.js
 import {
   ESPLoader,
   FlashOptions,
@@ -46,8 +44,8 @@ import { serial } from "web-serial-polyfill";
 
 const serialLib = !navigator.serial && navigator.usb ? serial : navigator.serial;
 
-declare let Terminal; // Terminal is imported in HTML script
-declare let CryptoJS; // CryptoJS is imported in HTML script
+declare let Terminal;
+declare let CryptoJS;
 
 const term = new Terminal({ cols: 120, rows: 40 });
 term.open(terminal);
@@ -58,29 +56,21 @@ let transport: Transport;
 let chip: string = null;
 let esploader: ESPLoader;
 
-disconnectButton.style.display = "none";
-traceButton.style.display = "none";
-eraseButton.style.display = "none";
-consoleStopButton.style.display = "none";
-resetButton.style.display = "none";
-filesDiv.style.display = "none";
-flashMode.style.display = "none";
-flashFreq.style.display = "none";
-flashSize.style.display = "none";
-lblFlashMode.style.display = "none";
-lblFlashFreq.style.display = "none";
-lblFlashSize.style.display = "none";
+const show = (el: HTMLElement) => el.classList.remove("hidden");
+const hide = (el: HTMLElement) => el.classList.add("hidden");
 
-/**
- * The built in Event object.
- * @external Event
- * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Event}
- */
+hide(traceButton);
+hide(eraseButton);
+hide(consoleStopButton);
+hide(resetButton);
+hide(filesDiv);
+hide(flashMode);
+hide(flashFreq);
+hide(flashSize);
+hide(lblFlashMode);
+hide(lblFlashFreq);
+hide(lblFlashSize);
 
-/**
- * File reader handler to read given local file.
- * @param {Event} evt File Select event
- */
 function handleFileSelect(evt) {
   const file = evt.target.files[0];
 
@@ -111,15 +101,11 @@ const espLoaderTerminal = {
   },
 };
 
-/**
- * Populate flash size and frequency dropdowns based on chip's supported values
- */
 function populateFlashDropdowns() {
   if (!esploader || !esploader.chip) {
     return;
   }
 
-  // Populate Flash Frequency dropdown
   flashFreq.innerHTML = '<option value="keep">keep</option>';
   const flashFreqKeys = Object.keys(esploader.chip.FLASH_FREQUENCY).sort((a, b) => {
     const freqOrder = ["80m", "60m", "48m", "40m", "30m", "26m", "24m", "20m", "16m", "15m", "12m"];
@@ -138,7 +124,6 @@ function populateFlashDropdowns() {
   });
   flashFreq.options[0].selected = true;
 
-  // Populate Flash Size dropdown
   flashSize.innerHTML = '<option value="detect">detect</option><option value="keep">keep</option>';
   const flashSizeKeys = Object.keys(esploader.chip.FLASH_SIZES).sort((a, b) => {
     const sizeOrder = [
@@ -186,33 +171,28 @@ connectButton.onclick = async () => {
     } as LoaderOptions;
     esploader = new ESPLoader(flashOptions);
 
-    traceButton.style.display = "initial";
+    show(traceButton);
     chip = await esploader.main();
 
-    // Populate flash dropdowns based on chip's supported values
     populateFlashDropdowns();
 
-    // Temporarily broken
-    // await esploader.flashId();
-    // eslint-disable-next-line no-console
     console.log("Settings done for :" + chip);
-    lblBaudrate.style.display = "none";
-    lblConnTo.innerHTML = "Connected to device: " + chip;
-    lblConnTo.style.display = "block";
-    baudrates.style.display = "none";
-    connectButton.style.display = "none";
-    disconnectButton.style.display = "initial";
-    eraseButton.style.display = "initial";
-    filesDiv.style.display = "initial";
-    flashMode.style.display = "initial";
-    flashFreq.style.display = "initial";
-    flashSize.style.display = "initial";
-    lblFlashMode.style.display = "initial";
-    lblFlashFreq.style.display = "initial";
-    lblFlashSize.style.display = "initial";
-    consoleDiv.style.display = "none";
+    hide(lblBaudrate);
+    hide(baudrates);
+    hide(connectButton);
+    connDeviceText.textContent = "Connected to: " + chip;
+    show(lblConnTo);
+    show(disconnectButton);
+    show(eraseButton);
+    show(filesDiv);
+    show(flashMode);
+    show(flashFreq);
+    show(flashSize);
+    show(lblFlashMode);
+    show(lblFlashFreq);
+    show(lblFlashSize);
+    hide(consoleDiv);
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error(e);
     term.writeln(`Error: ${e.message}`);
   }
@@ -237,7 +217,6 @@ eraseButton.onclick = async () => {
   try {
     await esploader.eraseFlash();
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error(e);
     term.writeln(`Error: ${e.message}`);
   } finally {
@@ -249,7 +228,6 @@ addFileButton.onclick = () => {
   const rowCount = table.rows.length;
   const row = table.insertRow(rowCount);
 
-  //Column 1 - Offset
   const cell1 = row.insertCell(0);
   const element1 = document.createElement("input");
   element1.type = "text";
@@ -257,7 +235,6 @@ addFileButton.onclick = () => {
   element1.value = "0x1000";
   cell1.appendChild(element1);
 
-  // Column 2 - File selector
   const cell2 = row.insertCell(1);
   const element2 = document.createElement("input");
   element2.type = "file";
@@ -266,22 +243,17 @@ addFileButton.onclick = () => {
   element2.addEventListener("change", handleFileSelect, false);
   cell2.appendChild(element2);
 
-  // Column 3  - Progress
   const cell3 = row.insertCell(2);
   cell3.classList.add("progress-cell");
-  cell3.style.display = "none";
+  hide(cell3);
   cell3.innerHTML = `<progress value="0" max="100"></progress>`;
 
-  // Column 4  - Remove File
   const cell4 = row.insertCell(3);
   cell4.classList.add("action-cell");
   if (rowCount > 1) {
-    const element4 = document.createElement("input");
-    element4.type = "button";
-    const btnName = "button" + rowCount;
-    element4.name = btnName;
-    element4.setAttribute("class", "btn");
-    element4.setAttribute("value", "Remove"); // or element1.value = "button";
+    const element4 = document.createElement("button");
+    element4.className = "btn btn-outline";
+    element4.textContent = "Remove";
     element4.onclick = function () {
       removeRow(row);
     };
@@ -289,24 +261,11 @@ addFileButton.onclick = () => {
   }
 };
 
-/**
- * The built in HTMLTableRowElement object.
- * @external HTMLTableRowElement
- * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLTableRowElement}
- */
-
-/**
- * Remove file row from HTML Table
- * @param {HTMLTableRowElement} row Table row element to remove
- */
 function removeRow(row: HTMLTableRowElement) {
   const rowIndex = Array.from(table.rows).indexOf(row);
   table.deleteRow(rowIndex);
 }
 
-/**
- * Clean devices variables on chip disconnect. Remove stale references if any.
- */
 function cleanUp() {
   device = null;
   deviceInfo = null;
@@ -318,23 +277,23 @@ disconnectButton.onclick = async () => {
   if (transport) await transport.disconnect();
 
   term.reset();
-  lblBaudrate.style.display = "initial";
-  baudrates.style.display = "initial";
-  consoleBaudrates.style.display = "initial";
-  connectButton.style.display = "initial";
-  disconnectButton.style.display = "none";
-  traceButton.style.display = "none";
-  eraseButton.style.display = "none";
-  lblConnTo.style.display = "none";
-  filesDiv.style.display = "none";
-  flashMode.style.display = "none";
-  flashFreq.style.display = "none";
-  flashSize.style.display = "none";
-  lblFlashMode.style.display = "none";
-  lblFlashFreq.style.display = "none";
-  lblFlashSize.style.display = "none";
-  alertDiv.style.display = "none";
-  consoleDiv.style.display = "initial";
+  show(lblBaudrate);
+  show(baudrates);
+  show(consoleBaudrates);
+  show(connectButton);
+  hide(disconnectButton);
+  hide(traceButton);
+  hide(eraseButton);
+  hide(lblConnTo);
+  hide(filesDiv);
+  hide(flashMode);
+  hide(flashFreq);
+  hide(flashSize);
+  hide(lblFlashMode);
+  hide(lblFlashFreq);
+  hide(lblFlashSize);
+  hide(alertDiv);
+  show(consoleDiv);
   cleanUp();
 };
 
@@ -351,7 +310,6 @@ consoleStartButton.onclick = async () => {
     transport = new Transport(device, true);
     deviceInfo = device.getInfo();
 
-    // Set up device lost callback
     transport.setDeviceLostCallback(async () => {
       if (!isConsoleClosed && !isReconnecting) {
         term.writeln("\n[DEVICE LOST] Device disconnected. Trying to reconnect...");
@@ -380,8 +338,8 @@ consoleStartButton.onclick = async () => {
                 term.writeln("[RECONNECT] Found previously authorized device, connecting...");
                 await transport.connect(parseInt(consoleBaudrates.value));
                 term.writeln("[RECONNECT] Successfully reconnected!");
-                consoleStopButton.style.display = "initial";
-                resetButton.style.display = "initial";
+                show(consoleStopButton);
+                show(resetButton);
                 isReconnecting = false;
 
                 startConsoleReading();
@@ -404,13 +362,13 @@ consoleStartButton.onclick = async () => {
     });
   }
 
-  lblConsoleFor.style.display = "block";
-  lblConsoleBaudrate.style.display = "none";
-  consoleBaudrates.style.display = "none";
-  consoleStartButton.style.display = "none";
-  consoleStopButton.style.display = "initial";
-  resetButton.style.display = "initial";
-  programDiv.style.display = "none";
+  show(lblConsoleFor);
+  hide(lblConsoleBaudrate);
+  hide(consoleBaudrates);
+  hide(consoleStartButton);
+  show(consoleStopButton);
+  show(resetButton);
+  hide(programDiv);
 
   await transport.connect(parseInt(consoleBaudrates.value));
   isConsoleClosed = false;
@@ -419,10 +377,6 @@ consoleStartButton.onclick = async () => {
   startConsoleReading();
 };
 
-/**
- * IDF Monitor–style auto-coloring: inject ANSI codes by log level (E/W/I) so colors
- * work without CONFIG_LOG_COLORS on the device. Same regex as esp-idf-monitor.
- */
 const IDF_LOG_LEVEL_REGEX = /^(I|W|E) \([\d.: -]+\)/;
 const ANSI = {
   RED: "\x1b[1;31m",
@@ -431,11 +385,6 @@ const ANSI = {
   NORMAL: "\x1b[0m",
 };
 
-/**
- * Use IDF Monitor style log level prefixes to inject ANSI color codes for better readability. Lines that don't match the pattern are returned unmodified.
- * @param {string} line Console line to colorize
- * @returns {string} Colorized console line
- */
 function colorizeIdfLine(line: string): string {
   const match = IDF_LOG_LEVEL_REGEX.exec(line);
   if (!match) return line;
@@ -443,9 +392,6 @@ function colorizeIdfLine(line: string): string {
   return color + line + ANSI.NORMAL;
 }
 
-/**
- * Continuously read from the console until it's closed, applying colorization to IDF log lines. If the connection is lost, it will wait for reconnection and resume reading. Errors are caught and displayed in the terminal without breaking the reading loop.
- */
 async function startConsoleReading() {
   if (isConsoleClosed || !transport) return;
 
@@ -488,20 +434,16 @@ consoleStopButton.onclick = async () => {
     await transport.waitForUnlock(1500);
   }
   term.reset();
-  lblConsoleBaudrate.style.display = "initial";
-  consoleBaudrates.style.display = "initial";
-  consoleStartButton.style.display = "initial";
-  consoleStopButton.style.display = "none";
-  resetButton.style.display = "none";
-  lblConsoleFor.style.display = "none";
-  programDiv.style.display = "initial";
+  show(lblConsoleBaudrate);
+  show(consoleBaudrates);
+  show(consoleStartButton);
+  hide(consoleStopButton);
+  hide(resetButton);
+  hide(lblConsoleFor);
+  show(programDiv);
   cleanUp();
 };
 
-/**
- * Validate the provided files images and offset to see if they're valid.
- * @returns {string} Program input validation result
- */
 function validateProgramInputs() {
   const offsetArr = [];
   const rowCount = table.rows.length;
@@ -509,21 +451,17 @@ function validateProgramInputs() {
   let offset = 0;
   let fileData = null;
 
-  // check for mandatory fields
   for (let index = 1; index < rowCount; index++) {
     row = table.rows[index];
 
-    //offset fields checks
-    const offSetObj = row.cells[0].childNodes[0];
+    const offSetObj = row.cells[0].childNodes[0] as HTMLInputElement;
     offset = parseInt(offSetObj.value);
 
-    // Non-numeric or blank offset
     if (Number.isNaN(offset)) return "Offset field in row " + index + " is not a valid address!";
-    // Repeated offset used
     else if (offsetArr.includes(offset)) return "Offset field in row " + index + " is already in use!";
     else offsetArr.push(offset);
 
-    const fileObj = row.cells[1].childNodes[0];
+    const fileObj = row.cells[1].childNodes[0] as HTMLInputElement & { data: Uint8Array };
     fileData = fileObj.data;
     if (fileData == null) return "No file selected for row " + index + "!";
   }
@@ -536,12 +474,11 @@ programButton.onclick = async () => {
 
   if (err != "success") {
     alertMsg.innerHTML = "<strong>" + err + "</strong>";
-    alertDiv.style.display = "block";
+    show(alertDiv);
     return;
   }
 
-  // Hide error message
-  alertDiv.style.display = "none";
+  hide(alertDiv);
 
   const fileArray = [];
   const progressBars = [];
@@ -553,13 +490,13 @@ programButton.onclick = async () => {
     const offset = parseInt(offSetObj.value);
 
     const fileObj = row.cells[1].childNodes[0] as ChildNode & { data: Uint8Array };
-    const progressBar = row.cells[2].childNodes[0];
+    const progressBar = row.cells[2].childNodes[0] as HTMLProgressElement;
 
-    progressBar.textContent = "0";
+    progressBar.value = 0;
     progressBars.push(progressBar);
 
-    row.cells[2].style.display = "initial";
-    row.cells[3].style.display = "none";
+    show(row.cells[2] as HTMLElement);
+    hide(row.cells[3] as HTMLElement);
 
     fileArray.push({ data: fileObj.data, address: offset });
   }
@@ -583,16 +520,14 @@ programButton.onclick = async () => {
     await esploader.writeFlash(flashOptions);
     await esploader.after();
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error(e);
     term.writeln(`Error: ${e.message}`);
   } finally {
-    // Hide progress bars and show erase buttons
     for (let index = 1; index < table.rows.length; index++) {
-      table.rows[index].cells[2].style.display = "none";
-      table.rows[index].cells[3].style.display = "initial";
+      hide(table.rows[index].cells[2] as HTMLElement);
+      show(table.rows[index].cells[3] as HTMLElement);
     }
   }
 };
 
-addFileButton.onclick(this);
+addFileButton.onclick(new MouseEvent("click"));
