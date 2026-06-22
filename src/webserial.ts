@@ -404,14 +404,13 @@ class Transport {
    * @param {Function} isClosed Function that returns true when reading should stop (e.g. when console is closed)
    */
   async rawRead(onData: (data: Uint8Array) => void, isClosed: () => boolean): Promise<void> {
-    let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
     try {
       if (!this.device.readable) {
         return;
       }
-      reader = this.device.readable.getReader();
+      this.reader = this.device.readable.getReader();
       while (!isClosed()) {
-        const { value, done } = await reader.read();
+        const { value, done } = await this.reader.read();
         if (done || !value) break;
         if (this.tracing) {
           this.trace(`Read ${value.length} bytes: ${this.hexConvert(value)}`);
@@ -427,7 +426,8 @@ class Transport {
         }
       }
     } finally {
-      reader?.releaseLock();
+      this.reader?.releaseLock();
+      this.reader = undefined;
     }
   }
 
