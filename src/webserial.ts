@@ -177,6 +177,20 @@ class Transport {
   }
 
   /**
+   * Write raw binary data to device without SLIP framing.
+   * @param {Uint8Array} data 8 bit unsigned data array to write to device.
+   */
+  async rawWrite(data: Uint8Array): Promise<void> {
+    if (!this.device.writable) return;
+    const writer = this.device.writable.getWriter();
+    if (this.tracing) {
+      this.trace(`Raw write ${data.length} bytes: ${this.hexConvert(data)}`);
+    }
+    await writer.write(data);
+    writer.releaseLock();
+  }
+
+  /**
    * Write binary data to device using the WebSerial device writable stream.
    * @param {Uint8Array} data 8 bit unsigned data array to write to device.
    */

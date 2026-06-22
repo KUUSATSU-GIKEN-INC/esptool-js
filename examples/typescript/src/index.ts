@@ -10,6 +10,9 @@ const consoleStartButton = document.getElementById("consoleStartButton") as HTML
 const consoleStopButton = document.getElementById("consoleStopButton") as HTMLButtonElement;
 const exportConsoleButton = document.getElementById("exportConsoleButton") as HTMLButtonElement;
 const clearConsoleButton = document.getElementById("clearConsoleButton") as HTMLButtonElement;
+const consoleSendRow = document.getElementById("consoleSendRow") as HTMLDivElement;
+const consoleSendInput = document.getElementById("consoleSendInput") as HTMLInputElement;
+const consoleSendButton = document.getElementById("consoleSendButton") as HTMLButtonElement;
 const eraseButton = document.getElementById("eraseButton") as HTMLButtonElement;
 const addFileButton = document.getElementById("addFile") as HTMLButtonElement;
 const programButton = document.getElementById("programButton") as HTMLButtonElement;
@@ -375,6 +378,8 @@ consoleStartButton.onclick = async () => {
   show(resetButton);
   show(exportConsoleButton);
   show(clearConsoleButton);
+  show(consoleSendRow);
+  consoleSendInput.value = "";
   hide(programDiv);
 
   consoleLogBuffer = "";
@@ -436,6 +441,20 @@ async function startConsoleReading() {
   }
 }
 
+async function sendConsoleCommand() {
+  const text = consoleSendInput.value;
+  if (!text || !transport) return;
+  const encoded = new TextEncoder().encode(text + "\r\n");
+  await transport.rawWrite(encoded);
+  consoleSendInput.value = "";
+}
+
+consoleSendButton.onclick = sendConsoleCommand;
+
+consoleSendInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") sendConsoleCommand();
+});
+
 clearConsoleButton.onclick = () => {
   term.clear();
   consoleLogBuffer = "";
@@ -468,6 +487,7 @@ consoleStopButton.onclick = async () => {
   show(consoleStartButton);
   hide(consoleStopButton);
   hide(resetButton);
+  hide(consoleSendRow);
   hide(lblConsoleFor);
   show(programDiv);
   cleanUp();
