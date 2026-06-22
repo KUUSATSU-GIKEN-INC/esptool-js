@@ -8,6 +8,7 @@ const disconnectButton = document.getElementById("disconnectButton") as HTMLButt
 const resetButton = document.getElementById("resetButton") as HTMLButtonElement;
 const consoleStartButton = document.getElementById("consoleStartButton") as HTMLButtonElement;
 const consoleStopButton = document.getElementById("consoleStopButton") as HTMLButtonElement;
+const exportConsoleButton = document.getElementById("exportConsoleButton") as HTMLButtonElement;
 const eraseButton = document.getElementById("eraseButton") as HTMLButtonElement;
 const addFileButton = document.getElementById("addFile") as HTMLButtonElement;
 const programButton = document.getElementById("programButton") as HTMLButtonElement;
@@ -63,6 +64,7 @@ hide(traceButton);
 hide(eraseButton);
 hide(consoleStopButton);
 hide(resetButton);
+hide(exportConsoleButton);
 hide(filesDiv);
 hide(flashMode);
 hide(flashFreq);
@@ -299,6 +301,7 @@ disconnectButton.onclick = async () => {
 
 let isConsoleClosed = false;
 let isReconnecting = false;
+let consoleLogBuffer = "";
 
 const sleep = async (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -368,8 +371,10 @@ consoleStartButton.onclick = async () => {
   hide(consoleStartButton);
   show(consoleStopButton);
   show(resetButton);
+  show(exportConsoleButton);
   hide(programDiv);
 
+  consoleLogBuffer = "";
   await transport.connect(parseInt(consoleBaudrates.value));
   isConsoleClosed = false;
   isReconnecting = false;
@@ -407,12 +412,14 @@ async function startConsoleReading() {
           lineBuffer = lineBuffer.slice(idx + 1);
           const lineStripped = lineWithEol.replace(/\r?\n$/, "");
           const eol = lineWithEol.slice(lineStripped.length);
+          consoleLogBuffer += lineStripped + eol;
           term.write(colorizeIdfLine(lineStripped) + eol);
         }
       },
       () => isConsoleClosed,
     );
     if (lineBuffer.length > 0) {
+      consoleLogBuffer += lineBuffer;
       term.write(colorizeIdfLine(lineBuffer));
     }
   } catch (error) {
@@ -425,6 +432,19 @@ async function startConsoleReading() {
     term.writeln("\n[CONSOLE] Connection lost, waiting for reconnection...");
   }
 }
+
+exportConsoleButton.onclick = () => {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const blob = new Blob([consoleLogBuffer], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `console_${timestamp}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
 
 consoleStopButton.onclick = async () => {
   isConsoleClosed = true;
